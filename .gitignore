@@ -1,0 +1,24 @@
+# NOTA: paper_state.json, trades.csv, trades.xlsx e bot.log NON sono
+# ignorati di proposito — il workflow GitHub Actions li committa nel
+# repo ad ogni esecuzione per tenere traccia dell'andamento del bot.
+# Se esegui il bot anche in locale e non vuoi che i tuoi test si
+# mischino con quelli automatici, valuta di escluderli manualmente.
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+env/
+.venv/
+
+# Dati storici (possono essere pesanti, meglio scaricarli separatamente)
+*.csv
+!bot/trades.csv
+
+# Ambiente / segreti - MAI committare chiavi private
+.env
+*.key
+
+# OS
+.DS_Store

@@ -1,0 +1,4 @@
+# Necessari SOLO per l'esecuzione LIVE on-chain (PAPER_TRADING = False in config.py)
+# Non richiesti per il paper trading.
+web3>=6.11.0
+eth-account>=0.10.0
