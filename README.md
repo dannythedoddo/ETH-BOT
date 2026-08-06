@@ -17,6 +17,12 @@ Una media mobile lunga (1500 candele da 15 min, ~15 giorni) fa da interruttore d
 
 Tutte le decisioni usano solo dati presenti/passati — è reattiva, non predittiva.
 
+## Fonte dei dati di mercato
+
+Il bot usa l'**API pubblica di Kraken** (nessuna API key richiesta). In precedenza usava Binance, ma Binance.com blocca esplicitamente (HTTP 451) le richieste da IP statunitensi — e i runner di GitHub Actions girano su infrastruttura Azure negli USA, quindi da lì non funzionava.
+
+Kraken restituisce solo le candele più recenti (~720) per richiesta, quindi il bot mantiene uno **storico persistente** in `bot/price_history.csv`, che si arricchisce delle nuove candele ad ogni esecuzione invece di riscaricare tutto da zero. Il repository include già un file di seed con 2000 candele storiche, così il bot ha da subito la profondità di dati necessaria alla media di regime (altrimenti servirebbero ~15 giorni di accumulo).
+
 ## Setup
 
 ```bash
@@ -40,7 +46,7 @@ python main.py --status
 python main.py
 ```
 
-Lo stato del portafoglio virtuale viene salvato in `bot/paper_state.json`, i log in `bot/bot.log`, e ogni trade simulato in `bot/trades.csv` (con timestamp, prezzo, motivo dell'operazione, commissioni simulate).
+Lo stato del portafoglio virtuale viene salvato in `bot/paper_state.json`, i log in `bot/bot.log`, e ogni trade simulato in `bot/trades.csv` e `bot/trades.xlsx` (con timestamp, prezzo, motivo dell'operazione, commissioni simulate).
 
 ## 🤖 Far girare il bot su GitHub (computer spento)
 
@@ -49,11 +55,12 @@ Il repository include un workflow GitHub Actions (`.github/workflows/bot.yml`) c
 - `bot/trades.xlsx` — **si arricchisce di una riga ogni volta che il bot completa un trade** (foglio "Trades"), più uno snapshot dell'equity ad ogni controllo anche senza trade (foglio "Andamento") — utile per un grafico dell'andamento nel tempo
 - `bot/trades.csv` — stesso log in formato CSV
 - `bot/paper_state.json` — stato del portafoglio virtuale (persiste tra un'esecuzione e l'altra)
+- `bot/price_history.csv` — storico prezzi, cresce ad ogni run
 - `bot/bot.log` — log testuale dettagliato
 
 ### Setup (una tantum)
 
-1. Pubblica il repository su GitHub (pubblico o privato, funziona in entrambi i casi)
+1. Pubblica il repository su GitHub (pubblico o privato, funziona in entrambi i casi). **Attenzione**: carica i file dentro il repository, non una cartella che li contiene — dalla home del repo devi vedere direttamente `bot/`, `backtest/`, `.github/`, non una sottocartella `eth-regime-bot/` che le racchiude. Se carichi manualmente da interfaccia web, verifica anche che ogni file `.py` mantenga la sua estensione (a volte va persa nel drag-and-drop).
 2. Vai su **Settings → Actions → General**, in fondo alla pagina in "Workflow permissions" seleziona **"Read and write permissions"** e salva — senza questo passaggio il bot non può salvare i risultati nel repo
 3. Vai sulla tab **Actions** del repository: dovresti già vedere il workflow "ETH Regime Bot - Paper Trading". Puoi lanciarlo manualmente subito con il pulsante **"Run workflow"** per testarlo, oppure aspettare la prossima esecuzione schedulata (ogni 15 minuti)
 
@@ -66,12 +73,13 @@ Scarica `bot/trades.xlsx` direttamente da GitHub (si aggiorna automaticamente ad
 - **GitHub disattiva automaticamente i workflow schedulati dopo 60 giorni senza commit manuali nel repository.** Se il bot smette di girare dopo circa 2 mesi, vai su Actions → bot.yml → "Enable workflow" per riattivarlo (oppure fai un piccolo commit manuale ogni tanto).
 - Gli orari del cron di GitHub Actions **non sono garantiti al minuto esatto** — nei momenti di alto carico sulla piattaforma può slittare di qualche minuto. Per questa strategia (che opera su timeframe di giorni) non è un problema.
 - Ogni esecuzione crea un commit nel repository: dopo mesi di utilizzo la cronologia Git crescerà. Se ti infastidisce, puoi periodicamente "squashare" la storia — non influisce sul funzionamento del bot.
+- Se anche Kraken dovesse diventare non raggiungibile da GitHub Actions in futuro, il modulo da modificare è solo `bot/data_feed.py` — la logica della strategia non dipende dalla fonte dati specifica.
 
-
+## Consigli per il periodo di test con fondi virtuali
 
 - **Fai girare il bot per almeno 4-8 settimane** prima di considerare capitale reale — la strategia opera su timeframe di giorni/settimane (media di regime a ~15 giorni), quindi ha bisogno di tempo per mostrare il suo comportamento su cicli di mercato reali.
-- Tieni d'occhio `trades.csv`: ogni riga spiega il motivo dell'operazione (breakout, trailing stop, cambio di regime) — utile per capire se il comportamento corrisponde alle aspettative del backtest.
-- Se vuoi far girare il bot 24/7 senza tenere il computer acceso, puoi usarlo su un piccolo server (es. una VM gratuita/economica) o un servizio di scheduling (cron job che lancia `python main.py --once` ogni 15 minuti).
+- Tieni d'occhio `trades.xlsx`: ogni riga spiega il motivo dell'operazione (breakout, trailing stop, cambio di regime) — utile per capire se il comportamento corrisponde alle aspettative del backtest.
+- È normale che il bot resti a lungo senza fare trade se il mercato è in regime "bear" (prezzo sotto la media di 1500 candele) — è protezione del capitale, non un malfunzionamento.
 
 ## Riprodurre il backtest storico
 
@@ -89,21 +97,23 @@ eth-regime-bot/
 │   └── workflows/
 │       └── bot.yml         # esegue il bot ogni 15 min sui server GitHub
 ├── bot/
-│   ├── config.py         # parametri strategia + capitale + modalità paper/live
-│   ├── main.py            # entry point, loop principale
-│   ├── strategy.py        # logica Regime-Adaptive Pyramid (valutazione live)
-│   ├── paper_trader.py    # portafoglio virtuale con persistenza stato
-│   ├── excel_log.py       # aggiorna trades.xlsx ad ogni trade/snapshot
-│   ├── data_feed.py       # download prezzi reali (API pubblica Binance)
-│   └── indicators.py      # ATR, Donchian, media di regime
+│   ├── config.py           # parametri strategia + capitale + modalità paper/live
+│   ├── main.py             # entry point, loop principale
+│   ├── strategy.py         # logica Regime-Adaptive Pyramid (valutazione live)
+│   ├── paper_trader.py     # portafoglio virtuale con persistenza stato
+│   ├── excel_log.py        # aggiorna trades.xlsx ad ogni trade/snapshot
+│   ├── data_feed.py        # download prezzi reali (API pubblica Kraken)
+│   ├── history_store.py    # gestisce lo storico persistente price_history.csv
+│   ├── price_history.csv   # seed iniziale (2000 candele) + storico accumulato
+│   └── indicators.py       # ATR, Donchian, media di regime
 ├── backtest/
-│   ├── backtest_engine.py # motore di backtest (portfolio, commissioni, drawdown)
-│   ├── strategies.py      # le strategie testate, inclusa quella vincente
-│   └── run_backtest.py    # script per ri-eseguire il backtest storico
+│   ├── backtest_engine.py  # motore di backtest (portfolio, commissioni, drawdown)
+│   ├── strategies.py       # le strategie testate, inclusa quella vincente
+│   └── run_backtest.py     # script per ri-eseguire il backtest storico
 ├── tests/
-│   └── test_strategy.py   # test automatici (dati sintetici, no rete richiesta)
+│   └── test_strategy.py    # test automatici (dati sintetici, no rete richiesta)
 ├── requirements.txt
-├── requirements-live.txt  # dipendenze aggiuntive solo per esecuzione on-chain
+├── requirements-live.txt   # dipendenze aggiuntive solo per esecuzione on-chain
 └── LICENSE
 ```
 

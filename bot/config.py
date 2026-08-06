@@ -51,10 +51,9 @@ SIMULATED_SLIPPAGE = 0.0005   # 0.05% - stima slippage su pool liquidi L2
 # =======================================================================
 # DATI DI MERCATO
 # =======================================================================
-SYMBOL = "ETHUSDT"
+KRAKEN_PAIR = "ETHUSD"
 CANDLE_INTERVAL = "15m"
-PRICE_HISTORY_LIMIT = 2000   # candele storiche da scaricare a ogni avvio
-                              # (deve coprire almeno REGIME_MA_PERIOD)
+PRICE_HISTORY_FILE = "price_history.csv"  # storico persistente, cresce ad ogni run
 
 CHECK_INTERVAL_SECONDS = 900  # 15 minuti, allineato al timeframe strategia
 

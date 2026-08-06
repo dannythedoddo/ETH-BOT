@@ -18,6 +18,7 @@ import argparse
 
 import config
 import data_feed
+import history_store
 import strategy
 from paper_trader import PaperPortfolio
 
@@ -47,13 +48,24 @@ def print_status(portfolio, price):
 
 
 def run_once():
-    log.info("Scarico dati di mercato...")
-    df = data_feed.fetch_recent_candles(
-        symbol=config.SYMBOL,
-        interval=config.CANDLE_INTERVAL,
-        limit=config.PRICE_HISTORY_LIMIT
+    log.info("Carico lo storico persistente e scarico le candele più recenti...")
+    old_history = history_store.load_history()
+    new_candles = data_feed.fetch_latest_candles(
+        pair=config.KRAKEN_PAIR,
+        interval=config.CANDLE_INTERVAL
     )
-    log.info(f"Scaricate {len(df)} candele, ultima: {df['timestamp'].iloc[-1]}")
+    df = history_store.merge_and_save(old_history, new_candles)
+
+    if len(df) < config.REGIME_MA_PERIOD + 5:
+        log.warning(
+            f"Storico ancora insufficiente: {len(df)} candele disponibili, "
+            f"servono almeno {config.REGIME_MA_PERIOD + 5}. "
+            f"Il bot accumulerà storico nei prossimi run (circa "
+            f"{(config.REGIME_MA_PERIOD + 5 - len(df)) * 15 / 60:.0f} ore mancanti "
+            f"se eseguito ogni 15 minuti). Nessuna azione di trading in questo run."
+        )
+
+    log.info(f"Candele totali disponibili: {len(df)}, ultima: {df['timestamp'].iloc[-1]}")
 
     portfolio = PaperPortfolio()
     portfolio = strategy.evaluate(df, portfolio)
@@ -91,7 +103,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.status:
-        df = data_feed.fetch_recent_candles(symbol=config.SYMBOL, limit=5)
+        df = history_store.load_history()
+        if len(df) == 0:
+            print("Nessuno storico ancora disponibile. Esegui prima 'python main.py --once'.")
+            sys.exit(0)
         price = data_feed.get_current_price(df)
         portfolio = PaperPortfolio()
         print_status(portfolio, price)
