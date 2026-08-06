@@ -31,10 +31,14 @@ jobs:
         working-directory: bot
         run: python main.py --once
 
-      - name: Salva i risultati nel repository
+  - name: Salva i risultati nel repository
         run: |
           git config user.name "eth-regime-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add bot/paper_state.json bot/trades.csv bot/trades.xlsx bot/bot.log
+          for f in bot/paper_state.json bot/trades.csv bot/trades.xlsx bot/bot.log bot/price_history.csv; do
+            if [ -f "$f" ]; then
+              git add "$f"
+            fi
+          done
           git diff --cached --quiet && echo "Nessuna modifica da salvare" || git commit -m "Aggiornamento stato bot $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
