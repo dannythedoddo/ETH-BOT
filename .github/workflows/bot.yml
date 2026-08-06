@@ -4,7 +4,7 @@ name: ETH Regime Bot - Paper Trading
 # può restare spento: tutto gira nell'infrastruttura di GitHub Actions.
 on:
   schedule:
-    - cron: "*/15 * * * *"   # ogni 15 minuti (GitHub può ritardare qualche minuto nei picchi di carico)
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch: {}       # permette di lanciarlo manualmente da GitHub ("Run workflow")
 
 permissions:
