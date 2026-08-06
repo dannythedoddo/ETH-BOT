@@ -1,0 +1,44 @@
+name: ETH Regime Bot - Paper Trading
+
+# Esegue il bot ogni 15 minuti sui server di GitHub. Il tuo computer
+# può restare spento: tutto gira nell'infrastruttura di GitHub Actions.
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # ogni 15 minuti (GitHub può ritardare qualche minuto nei picchi di carico)
+  workflow_dispatch: {}       # permette di lanciarlo manualmente da GitHub ("Run workflow")
+
+permissions:
+  contents: write   # necessario per poter salvare i risultati nel repo
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installa dipendenze
+        run: pip install -r requirements.txt
+
+      - name: Esegui il bot (una valutazione)
+        working-directory: bot
+        run: python main.py --once
+
+      - name: Salva i risultati nel repository
+        run: |
+          git config user.name "eth-regime-bot"
+          git config user.email "bot@users.noreply.github.com"
+          for f in bot/paper_state.json bot/trades.csv bot/trades.xlsx bot/bot.log bot/price_history.csv; do
+            if [ -f "$f" ]; then
+              git add "$f"
+            fi
+          done
+          git diff --cached --quiet && echo "Nessuna modifica da salvare" || git commit -m "Aggiornamento stato bot $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
