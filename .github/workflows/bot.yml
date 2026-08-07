@@ -1,10 +1,13 @@
 name: ETH Regime Bot - Paper Trading
 
-# Esegue il bot ogni 15 minuti sui server di GitHub. Il tuo computer
+# Esegue il bot ogni ora sui server di GitHub. Il tuo computer
 # può restare spento: tutto gira nell'infrastruttura di GitHub Actions.
 on:
   schedule:
-    - cron: "7,22,37,52 * * * *"
+    - cron: "17 * * * *"   # ogni ora al minuto 17 (sfalsato dai minuti "tondi",
+                            # che sono i più congestionati su GitHub Actions).
+                            # Il timeframe della strategia è 4h: controllare
+                            # ogni ora è più che sufficiente.
   workflow_dispatch: {}       # permette di lanciarlo manualmente da GitHub ("Run workflow")
 
 permissions:
