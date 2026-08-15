@@ -1534,3 +1534,9 @@
 2026-08-15 10:57:12,270 [INFO] Candele totali disponibili: 680, ultima: 2026-08-15 04:00:00+00:00
 2026-08-15 10:57:12,271 [INFO] Stato caricato da paper_state.json: cash=100.00 eth=0.000000
 2026-08-15 10:57:12,273 [INFO] Prezzo: 1878.31 | Regime: BEAR | Equity: 100.00€ | Drawdown: 0.0% | In posizione: False (piramidi: 0) | Trade totali: 0
+2026-08-15 11:01:03,254 [INFO] Carico lo storico persistente e scarico le candele più recenti...
+2026-08-15 11:01:03,261 [INFO] Storico caricato: 680 candele, da 2026-04-24 00:00:00+00:00 a 2026-08-15 04:00:00+00:00
+2026-08-15 11:01:03,552 [INFO] Storico aggiornato e salvato: 680 candele (da 2026-04-24 00:00:00+00:00 a 2026-08-15 04:00:00+00:00)
+2026-08-15 11:01:03,552 [INFO] Candele totali disponibili: 680, ultima: 2026-08-15 04:00:00+00:00
+2026-08-15 11:01:03,553 [INFO] Stato caricato da paper_state.json: cash=100.00 eth=0.000000
+2026-08-15 11:01:03,555 [INFO] Prezzo: 1878.31 | Regime: BEAR | Equity: 100.00€ | Drawdown: 0.0% | In posizione: False (piramidi: 0) | Trade totali: 0
